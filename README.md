@@ -27,7 +27,7 @@ This makes Vigil an excellent showcase of:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Vigil                              │
+│                      Vigil                                  │
 │                                                             │
 │  Network Interface                                          │
 │       │                                                     │
