@@ -296,34 +296,34 @@ jobs:
 ## Roadmap
 
 ```
-Phase 1 — Foundation (Month 1–2)
+Phase 1 — Foundation 
   ├── Set up CMake + Cargo hybrid build
   ├── Integrate libpcap via bindgen (FFI boundary)
   └── Parse Ethernet/IP/TCP/UDP headers with pnet
 
-Phase 2 — Core Engine (Month 3–4)
+Phase 2 — Core Engine 
   ├── YAML rule loader
   ├── IP blocklist matching
   ├── Port scan heuristic (sliding time window)
   └── Multi-threaded processing with rayon
 
-Phase 3 — Integration & Testing (Month 5)
+Phase 3 — Integration & Testing 
   ├── Integration tests with real .pcap samples
   ├── Fuzz testing on packet parser
   ├── GitHub Actions CI pipeline
   └── Benchmarks vs tcpdump baseline
 
-Phase 4 — Polish & Release v0.1 (Month 6)
+Phase 4 — Polish & Release v0.1 
   ├── CLI polish (clap, --help, man page)
   ├── README, docs, example rules
   └── Publish: GitHub release + crates.io
 
-Phase 5 — v0.2 Features (Month 7–9)
+Phase 5 — v0.2 Features 
   ├── IPv6 support
   ├── Syslog output
   └── Rule hot-reload
 
-Phase 6 — v1.0 (Month 10–12)
+Phase 6 — v1.0 
   ├── Hyperscan (C) integration for regex payload matching
   ├── Web dashboard (Axum)
   └── Performance tuning for multi-gigabit capture
