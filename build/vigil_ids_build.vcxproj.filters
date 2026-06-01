@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\AHAN\COLLEGE\Z\Software\vigil-ids\build\CMakeFiles\7e5fa4cec508dcc2b5fdfba4d58f4664\vigil_ids_build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\AHAN\COLLEGE\Z\Software\vigil-ids\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\AHAN\COLLEGE\Z\Software\vigil-ids\build\CMakeFiles\vigil_ids_build" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{816DAF41-B5D3-352C-AF5B-4B0127379E7E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
