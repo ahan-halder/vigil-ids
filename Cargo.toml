@@ -2,5 +2,15 @@
 name = "vigil-ids"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
+clap = { version = "4.5", features = ["derive"] }
+
+[features]
+default = []
+pcap = []
+
+[build-dependencies]
+pkg-config = "0.3"
+vcpkg = "0.2"
