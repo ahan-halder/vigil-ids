@@ -1,6 +1,16 @@
 #[derive(Debug, Clone, Default)]
-pub struct ParsedPacket;
+pub struct ParsedPacket {
+    pub bytes: Vec<u8>,
+}
 
-pub fn parse(_bytes: &[u8]) -> ParsedPacket {
-    ParsedPacket
+impl ParsedPacket {
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+}
+
+pub fn parse(bytes: &[u8]) -> ParsedPacket {
+    ParsedPacket {
+        bytes: bytes.to_vec(),
+    }
 }

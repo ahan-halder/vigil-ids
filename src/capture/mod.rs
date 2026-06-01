@@ -15,4 +15,20 @@ impl CaptureConfig {
             pcap: cli.pcap.clone(),
         }
     }
+
+    pub fn selected_source(&self) -> Option<&str> {
+        self.interface
+            .as_deref()
+            .or(self.pcap.as_deref())
+    }
+
+    pub fn source_label(&self) -> &'static str {
+        if self.interface.is_some() {
+            "interface"
+        } else if self.pcap.is_some() {
+            "pcap"
+        } else {
+            "none"
+        }
+    }
 }

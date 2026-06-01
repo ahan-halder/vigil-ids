@@ -1,0 +1,4 @@
+rules:
+  - id: "BL-001"
+    name: "Blocked IP"
+    description: "Traffic from a known malicious IP"
