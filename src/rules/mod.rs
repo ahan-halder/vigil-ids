@@ -3,9 +3,11 @@ pub mod schema;
 use std::fs;
 use std::path::Path;
 
+pub use schema::{Rule, RuleCondition};
+
 #[derive(Debug, Clone, Default)]
 pub struct RuleSet {
-    pub rules: Vec<schema::Rule>,
+    pub rules: Vec<Rule>,
 }
 
 impl RuleSet {
@@ -25,5 +27,24 @@ impl RuleSet {
 
     pub fn is_empty(&self) -> bool {
         self.rules.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Rule> {
+        self.rules.iter()
+    }
+}
+
+pub fn matches_condition(condition: &RuleCondition, packet: &crate::parser::ParsedPacket) -> bool {
+    match condition {
+        RuleCondition::MatchAll => true,
+        RuleCondition::IpBlocklist { src_ips } => packet
+            .source_ip
+            .as_deref()
+            .is_some_and(|source_ip| src_ips.iter().any(|blocked_ip| blocked_ip == source_ip)),
+        RuleCondition::PortScan {
+            threshold,
+            window_secs,
+        } => packet.destination_ports.len() as u32 >= *threshold
+            && packet.len() as u64 >= *window_secs,
     }
 }

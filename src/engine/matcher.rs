@@ -1,6 +1,6 @@
 use crate::parser::ParsedPacket;
-use crate::rules::RuleSet;
+use crate::rules::{matches_condition, Rule};
 
-pub fn matches(_packet: &ParsedPacket, _rules: &RuleSet) -> bool {
-    false
+pub fn matches(rule: &Rule, packet: &ParsedPacket) -> bool {
+    matches_condition(&rule.condition, packet)
 }

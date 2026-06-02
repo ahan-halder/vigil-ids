@@ -32,20 +32,36 @@ fn main() {
     };
 
     let packet = parser::parse(&[]);
-    let engine = engine::DetectionEngine::new();
-    let alert = alerts::Alert::new("Vigil IDS boot sequence complete");
+    let engine = engine::DetectionEngine::with_rules(loaded_rules.clone());
+    let backend = capture::pcap_ffi::backend_name();
+    let alert = alerts::Alert::new(format!("Vigil IDS boot sequence complete via {backend}"));
 
-    match capture_config.selected_source() {
+    if loaded_rules.is_empty() {
+        println!("Loaded rules file is empty");
+    }
+
+    match cli.input_source() {
         Some(input) => {
             println!("Selected {} input: {input}", capture_config.source_label());
             println!("Loaded {} rules from {}", loaded_rules.len(), rules_path.display());
             println!("Parsed packet bytes: {}", packet.len());
+            let detections = engine.detect(&packet);
+            println!("Backend: {backend}");
             println!("Engine ready: {:?}", engine);
-            println!("Alert template: {:?}", alert);
+            println!("Alert template: {}", alert.message);
+            println!("Detections emitted: {}", detections.len());
+            for detection in detections {
+                println!(
+                    "Detection: rule={} severity={} action={} message={}",
+                    detection.rule_id, detection.severity, detection.action, detection.message
+                );
+            }
         }
         None => {
             println!("No capture source selected; use --interface or --pcap");
             println!("Loaded {} rules from {}", loaded_rules.len(), rules_path.display());
+            println!("Backend: {backend}");
+            println!("Alert template: {}", alert.message);
         }
     }
 }

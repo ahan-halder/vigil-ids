@@ -16,12 +16,6 @@ impl CaptureConfig {
         }
     }
 
-    pub fn selected_source(&self) -> Option<&str> {
-        self.interface
-            .as_deref()
-            .or(self.pcap.as_deref())
-    }
-
     pub fn source_label(&self) -> &'static str {
         if self.interface.is_some() {
             "interface"
