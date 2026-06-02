@@ -23,11 +23,3 @@ pub struct Cli {
     #[arg(long, default_value_t = false)]
     pub verbose: bool,
 }
-
-impl Cli {
-    pub fn input_source(&self) -> Option<&str> {
-        self.interface
-            .as_deref()
-            .or(self.pcap.as_deref())
-    }
-}
