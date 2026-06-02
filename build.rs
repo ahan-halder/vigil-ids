@@ -1,6 +1,7 @@
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-env-changed=VIGIL_ENABLE_PCAP_DISCOVERY");
+    println!("cargo:rustc-check-cfg=cfg(has_libpcap)");
 
     if std::env::var_os("CARGO_FEATURE_PCAP").is_none()
         && std::env::var_os("VIGIL_ENABLE_PCAP_DISCOVERY").is_none()
@@ -9,7 +10,9 @@ fn main() {
         return;
     }
 
-    if try_pkg_config().or_else(try_vcpkg).is_none() {
+    if try_pkg_config().or_else(try_vcpkg).is_some() {
+        println!("cargo:rustc-cfg=has_libpcap");
+    } else {
         println!("cargo:warning=libpcap was not found; continuing with a disabled pcap backend");
     }
 }
