@@ -331,7 +331,7 @@ Phase 6 — v1.0
 
 ---
 
-## Résumé Bullet Points
+## Resume Bullet Points
 
 > Use these when listing this project on your CV:
 
