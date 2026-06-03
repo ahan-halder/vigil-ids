@@ -41,10 +41,6 @@ pub fn matches_condition(condition: &RuleCondition, packet: &crate::parser::Pars
             .source_ip
             .as_deref()
             .is_some_and(|source_ip| src_ips.iter().any(|blocked_ip| blocked_ip == source_ip)),
-        RuleCondition::PortScan {
-            threshold,
-            window_secs,
-        } => packet.destination_ports.len() as u32 >= *threshold
-            && packet.len() as u64 >= *window_secs,
+        RuleCondition::PortScan { .. } => false,
     }
 }
