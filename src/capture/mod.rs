@@ -33,14 +33,29 @@ impl CaptureConfig {
 
 pub fn process_pcap_file(
     path: impl AsRef<Path>,
-    engine: &DetectionEngine,
+    engine: &mut DetectionEngine,
 ) -> Result<Vec<DetectionEvent>, String> {
     let packets = pcap_file::read_pcap_file(path)?;
     let mut detections = Vec::new();
 
-    for bytes in packets {
-        let parsed = parser::parse(&bytes);
+    for packet in packets {
+        let parsed = parser::parse_with_timestamp(&packet.data, packet.timestamp_secs);
         let _summary = parsed.summary();
+        detections.extend(engine.detect(&parsed));
+    }
+
+    Ok(detections)
+}
+
+pub fn process_live_interface(
+    interface: &str,
+    engine: &mut DetectionEngine,
+) -> Result<Vec<DetectionEvent>, String> {
+    let packets = pcap_ffi::capture_live(interface, 64)?;
+    let mut detections = Vec::new();
+
+    for packet in packets {
+        let parsed = parser::parse_with_timestamp(&packet.data, packet.timestamp_secs);
         detections.extend(engine.detect(&parsed));
     }
 
