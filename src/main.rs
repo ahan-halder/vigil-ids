@@ -1,15 +1,13 @@
-mod alerts;
-mod capture;
-mod cli;
-mod engine;
-mod parser;
-mod rules;
-
 use clap::Parser;
 use std::path::PathBuf;
+use vigil_ids::alerts;
+use vigil_ids::capture;
+use vigil_ids::cli::Cli;
+use vigil_ids::engine;
+use vigil_ids::rules;
 
 fn main() {
-    let cli = cli::Cli::parse();
+    let cli = Cli::parse();
     let capture_config = capture::CaptureConfig::from(&cli);
     let rules_path = cli
         .rules
@@ -31,7 +29,7 @@ fn main() {
         }
     };
 
-    let engine = engine::DetectionEngine::with_rules(loaded_rules.clone());
+    let mut engine = engine::DetectionEngine::with_rules(loaded_rules.clone());
     let backend = capture::pcap_ffi::backend_name();
     let alert = alerts::Alert::new(format!("Vigil IDS boot sequence complete via {backend}"));
 
@@ -46,7 +44,7 @@ fn main() {
     match cli.pcap.as_deref() {
         Some(pcap_path) => {
             println!("Selected {} input: {pcap_path}", capture_config.source_label());
-            match capture::process_pcap_file(pcap_path, &engine) {
+            match capture::process_pcap_file(pcap_path, &mut engine) {
                 Ok(detections) => {
                     println!("Detections emitted: {}", detections.len());
                     for detection in detections {
@@ -63,7 +61,20 @@ fn main() {
         }
         None => match cli.interface.as_deref() {
             Some(interface) => {
-                println!("Interface capture is not wired yet: {interface}");
+                match capture::process_live_interface(interface, &mut engine) {
+                    Ok(detections) => {
+                        println!("Detections emitted: {}", detections.len());
+                        for detection in detections {
+                            println!(
+                                "Detection: rule={} severity={} action={} message={}",
+                                detection.rule_id, detection.severity, detection.action, detection.message
+                            );
+                        }
+                    }
+                    Err(error) => {
+                        eprintln!("{error}");
+                    }
+                }
             }
             None => {
                 println!("No capture source selected; use --interface or --pcap");
