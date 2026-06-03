@@ -34,6 +34,7 @@ pub enum TransportHeader {
 #[derive(Debug, Clone, Default)]
 pub struct ParsedPacket {
     pub bytes: Vec<u8>,
+    pub capture_time_secs: Option<u64>,
     pub ethernet: Option<EthernetHeader>,
     pub ipv4: Option<Ipv4Header>,
     pub transport: Option<TransportHeader>,
@@ -94,6 +95,7 @@ pub fn parse(bytes: &[u8]) -> ParsedPacket {
     let ethernet = parse_ethernet(bytes);
     let mut parsed = ParsedPacket {
         bytes: bytes.to_vec(),
+        capture_time_secs: None,
         ethernet,
         ipv4: None,
         transport: None,
@@ -141,6 +143,12 @@ pub fn parse(bytes: &[u8]) -> ParsedPacket {
         _ => {}
     }
 
+    parsed
+}
+
+pub fn parse_with_timestamp(bytes: &[u8], capture_time_secs: u64) -> ParsedPacket {
+    let mut parsed = parse(bytes);
+    parsed.capture_time_secs = Some(capture_time_secs);
     parsed
 }
 
