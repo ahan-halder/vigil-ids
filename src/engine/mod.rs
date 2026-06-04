@@ -9,6 +9,9 @@ pub struct DetectionEvent {
     pub rule_id: String,
     pub severity: String,
     pub action: String,
+    pub timestamp_secs: Option<u64>,
+    pub src_ip: Option<String>,
+    pub dst_ip: Option<String>,
     pub message: String,
 }
 
@@ -54,6 +57,9 @@ impl DetectionEngine {
                 rule_id: rule.id.clone(),
                 severity: rule.severity.clone().unwrap_or_else(|| "low".to_string()),
                 action: rule.action.clone().unwrap_or_else(|| "alert".to_string()),
+                timestamp_secs: packet.capture_time_secs,
+                src_ip: packet.source_ip.clone(),
+                dst_ip: packet.destination_ip.clone(),
                 message: if let Some(destination_ip) = packet.destination_ip.as_deref() {
                     format!("{}: {} matched for destination {destination_ip}", rule.name, rule.description)
                 } else {
