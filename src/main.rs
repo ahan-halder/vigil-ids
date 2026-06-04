@@ -16,9 +16,9 @@ fn main() {
         .unwrap_or_else(|| PathBuf::from("rules/default.yaml"));
 
     if cli.verbose {
-        println!("Vigil IDS starting with configuration: {:?}", cli);
+        eprintln!("Vigil IDS starting with configuration: {:?}", cli);
     } else {
-        println!("Vigil IDS is starting up.");
+        eprintln!("Vigil IDS is starting up.");
     }
 
     let loaded_rules = match rules::RuleSet::load_from_path(&rules_path) {
@@ -34,24 +34,32 @@ fn main() {
     let alert = alerts::Alert::new(format!("Vigil IDS boot sequence complete via {backend}"));
 
     if loaded_rules.is_empty() {
-        println!("Loaded rules file is empty");
+        eprintln!("Loaded rules file is empty");
     }
 
-    println!("Backend: {backend}");
-    println!("Loaded {} rules from {}", loaded_rules.len(), rules_path.display());
-    println!("Alert template: {}", alert.message);
+    eprintln!("Backend: {backend}");
+    eprintln!("Loaded {} rules from {}", loaded_rules.len(), rules_path.display());
+    eprintln!("Alert template: {}", alert.message);
+
+    if cli.list_interfaces {
+        match capture::list_interfaces() {
+            Ok(interfaces) => {
+                for interface in interfaces {
+                    println!("{interface}");
+                }
+            }
+            Err(error) => eprintln!("{error}"),
+        }
+        return;
+    }
 
     match cli.pcap.as_deref() {
         Some(pcap_path) => {
-            println!("Selected {} input: {pcap_path}", capture_config.source_label());
+            eprintln!("Selected {} input: {pcap_path}", capture_config.source_label());
             match capture::process_pcap_file(pcap_path, &mut engine) {
                 Ok(detections) => {
-                    println!("Detections emitted: {}", detections.len());
-                    for detection in detections {
-                        println!(
-                            "Detection: rule={} severity={} action={} message={}",
-                            detection.rule_id, detection.severity, detection.action, detection.message
-                        );
+                    if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref()) {
+                        eprintln!("{error}");
                     }
                 }
                 Err(error) => {
@@ -63,12 +71,8 @@ fn main() {
             Some(interface) => {
                 match capture::process_live_interface(interface, &mut engine) {
                     Ok(detections) => {
-                        println!("Detections emitted: {}", detections.len());
-                        for detection in detections {
-                            println!(
-                                "Detection: rule={} severity={} action={} message={}",
-                                detection.rule_id, detection.severity, detection.action, detection.message
-                            );
+                        if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref()) {
+                            eprintln!("{error}");
                         }
                     }
                     Err(error) => {
@@ -77,7 +81,7 @@ fn main() {
                 }
             }
             None => {
-                println!("No capture source selected; use --interface or --pcap");
+                eprintln!("No capture source selected; use --interface or --pcap");
             }
         },
     }
