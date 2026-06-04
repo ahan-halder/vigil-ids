@@ -61,3 +61,7 @@ pub fn process_live_interface(
 
     Ok(detections)
 }
+
+pub fn list_interfaces() -> Result<Vec<String>, String> {
+    pcap_ffi::list_interfaces()
+}

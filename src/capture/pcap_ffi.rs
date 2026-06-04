@@ -13,6 +13,61 @@ pub fn backend_name() -> &'static str {
 }
 
 #[cfg(has_libpcap)]
+pub fn list_interfaces() -> Result<Vec<String>, String> {
+    use std::ffi::CStr;
+    use std::os::raw::{c_char, c_void};
+
+    #[repr(C)]
+    struct PcapIf {
+        next: *mut PcapIf,
+        name: *mut c_char,
+        description: *mut c_char,
+        addresses: *mut c_void,
+        flags: u32,
+    }
+
+    #[cfg(target_os = "windows")]
+    #[link(name = "wpcap")]
+    unsafe extern "C" {
+        fn pcap_findalldevs(alldevs: *mut *mut PcapIf, errbuf: *mut c_char) -> i32;
+        fn pcap_freealldevs(alldevs: *mut PcapIf);
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    unsafe extern "C" {
+        fn pcap_findalldevs(alldevs: *mut *mut PcapIf, errbuf: *mut c_char) -> i32;
+        fn pcap_freealldevs(alldevs: *mut PcapIf);
+    }
+
+    let mut errbuf = [0i8; 256];
+    let mut devices: *mut PcapIf = std::ptr::null_mut();
+    let result = unsafe { pcap_findalldevs(&mut devices, errbuf.as_mut_ptr()) };
+
+    if result != 0 {
+        let message = unsafe { CStr::from_ptr(errbuf.as_ptr()) }
+            .to_string_lossy()
+            .trim()
+            .to_string();
+        return Err(format!("failed to enumerate capture interfaces: {message}"));
+    }
+
+    let mut names = Vec::new();
+    let mut current = devices;
+
+    while !current.is_null() {
+        let name_ptr = unsafe { (*current).name };
+        if !name_ptr.is_null() {
+            let name = unsafe { CStr::from_ptr(name_ptr) }.to_string_lossy().to_string();
+            names.push(name);
+        }
+        current = unsafe { (*current).next };
+    }
+
+    unsafe { pcap_freealldevs(devices) };
+    Ok(names)
+}
+
+#[cfg(has_libpcap)]
 pub fn capture_live(interface: &str, max_packets: usize) -> Result<Vec<CapturedPacket>, String> {
     use std::ffi::{CStr, CString};
     use std::os::raw::{c_char, c_int, c_long, c_uchar};
@@ -147,4 +202,9 @@ pub fn capture_live(interface: &str, max_packets: usize) -> Result<Vec<CapturedP
 #[cfg(not(has_libpcap))]
 pub fn capture_live(_interface: &str, _max_packets: usize) -> Result<Vec<CapturedPacket>, String> {
     Err("live capture requires libpcap discovery (`--features pcap` or VIGIL_ENABLE_PCAP_DISCOVERY=1)".to_string())
+}
+
+#[cfg(not(has_libpcap))]
+pub fn list_interfaces() -> Result<Vec<String>, String> {
+    Err("interface enumeration requires libpcap discovery (`--features pcap` or VIGIL_ENABLE_PCAP_DISCOVERY=1)".to_string())
 }
