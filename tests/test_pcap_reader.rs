@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use vigil_ids::capture;
 use vigil_ids::capture::pcap_file;
 use vigil_ids::engine::DetectionEngine;
 use vigil_ids::parser;
@@ -50,6 +51,36 @@ rules:
     let detections = engine.detect(&third);
     assert_eq!(detections.len(), 1);
     assert_eq!(detections[0].rule_id, "PS-HISTORY");
+}
+
+#[test]
+fn process_pcap_file_ingests_multiple_packets() {
+    let rules_yaml = r#"
+rules:
+  - id: "PS-MULTI"
+    name: "Port Scan Multi Packet"
+    description: "Triggers after the third distinct destination port"
+    severity: high
+    action: alert
+    condition:
+      type: port_scan
+      threshold: 3
+      window_secs: 10
+"#;
+
+    let file: RuleFile = serde_yaml::from_str(rules_yaml).expect("rules YAML should parse");
+    let rules = RuleSet { rules: file.rules };
+    let mut engine = DetectionEngine::with_rules(rules);
+
+    let detections = capture::process_pcap_file(
+        Path::new("tests/pcap_samples/multi_packet_scan.pcap"),
+        &mut engine,
+    )
+    .expect("pcap processing should succeed");
+
+    assert_eq!(detections.len(), 1);
+    assert_eq!(detections[0].rule_id, "PS-MULTI");
+    assert_eq!(detections[0].timestamp_secs, Some(3));
 }
 
 fn tcp_packet_bytes(destination_port: u16) -> Vec<u8> {
