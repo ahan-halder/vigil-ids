@@ -8,6 +8,9 @@ use clap::{ArgGroup, Parser};
         .args(["interface", "pcap"])
 ))]
 pub struct Cli {
+    #[arg(long, default_value_t = false)]
+    pub list_interfaces: bool,
+
     #[arg(long)]
     pub interface: Option<String>,
 
