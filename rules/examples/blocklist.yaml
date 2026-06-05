@@ -1,0 +1,11 @@
+rules:
+  - id: "BL-001"
+    name: "Blocked IP"
+    description: "Traffic from a known malicious IP"
+    severity: critical
+    action: alert
+    condition:
+      type: ip_blocklist
+      src_ips:
+        - "192.168.1.100"
+        - "10.0.0.55"

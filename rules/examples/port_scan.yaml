@@ -1,0 +1,10 @@
+rules:
+  - id: "PS-001"
+    name: "Port Scan Detected"
+    description: "More than 15 unique ports contacted from one source in 10 seconds"
+    severity: high
+    action: alert
+    condition:
+      type: port_scan
+      threshold: 15
+      window_secs: 10
