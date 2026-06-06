@@ -38,7 +38,11 @@ fn main() {
     }
 
     eprintln!("Backend: {backend}");
-    eprintln!("Loaded {} rules from {}", loaded_rules.len(), rules_path.display());
+    eprintln!(
+        "Loaded {} rules from {}",
+        loaded_rules.len(),
+        rules_path.display()
+    );
     eprintln!("Alert template: {}", alert.message);
 
     if cli.list_interfaces {
@@ -55,10 +59,14 @@ fn main() {
 
     match cli.pcap.as_deref() {
         Some(pcap_path) => {
-            eprintln!("Selected {} input: {pcap_path}", capture_config.source_label());
+            eprintln!(
+                "Selected {} input: {pcap_path}",
+                capture_config.source_label()
+            );
             match capture::process_pcap_file(pcap_path, &mut engine) {
                 Ok(detections) => {
-                    if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref()) {
+                    if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref())
+                    {
                         eprintln!("{error}");
                     }
                 }
@@ -68,18 +76,17 @@ fn main() {
             }
         }
         None => match cli.interface.as_deref() {
-            Some(interface) => {
-                match capture::process_live_interface(interface, &mut engine) {
-                    Ok(detections) => {
-                        if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref()) {
-                            eprintln!("{error}");
-                        }
-                    }
-                    Err(error) => {
+            Some(interface) => match capture::process_live_interface(interface, &mut engine) {
+                Ok(detections) => {
+                    if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref())
+                    {
                         eprintln!("{error}");
                     }
                 }
-            }
+                Err(error) => {
+                    eprintln!("{error}");
+                }
+            },
             None => {
                 eprintln!("No capture source selected; use --interface or --pcap");
             }
