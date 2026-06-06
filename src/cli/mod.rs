@@ -1,7 +1,11 @@
 use clap::{ArgGroup, Parser};
 
 #[derive(Debug, Parser)]
-#[command(name = "vigil-ids", version, about = "A minimal network intrusion detection system")]
+#[command(
+    name = "vigil-ids",
+    version,
+    about = "A minimal network intrusion detection system"
+)]
 #[command(group(
     ArgGroup::new("input")
         .required(false)
