@@ -16,7 +16,7 @@ Vigil is a network intrusion detection system (NIDS) that combines **Rust's memo
 Traditional IDS tools like Snort and Suricata are written primarily in C/C++, making them susceptible to memory-corruption vulnerabilities — the very class of bug an IDS should be hardened against. Vigil flips this: the packet processing engine, rule matching, and alerting logic are all written in safe Rust, while libpcap (C) handles the low-level packet capture interface via FFI.
 
 This makes Vigil an excellent showcase of:
-- Real-world **Rust/C++ FFI interoperability** using `bindgen`
+- Real-world **Rust/C FFI interoperability** via manual `extern "C"` declarations
 - **CMake + Cargo** hybrid build systems
 - **Multi-threaded packet processing** with Rust's `tokio` and `rayon`
 - Zero unsafe code outside of the FFI boundary layer
@@ -54,12 +54,13 @@ This makes Vigil an excellent showcase of:
 | Module | Language | Purpose |
 |---|---|---|
 | `capture/` | Rust (FFI → libpcap) | Raw packet capture from interface or `.pcap` file |
-| `parser/` | Rust | Ethernet/IP/TCP/UDP header decoding via `pnet` |
-| `engine/` | Rust | Multi-threaded rule matching and signature evaluation |
-| `rules/` | Rust | JSON/YAML rule loader and parser |
-| `alerts/` | Rust | Alert formatting, syslog output, JSON log files |
+| `capture/pcap_ffi.rs` | Rust (unsafe) | FFI boundary — the only `unsafe` code in the project |
+| `capture/pcap_file.rs` | Rust | Pure-Rust `.pcap` file reader (no libpcap needed) |
+| `parser/` | Rust | Ethernet/IP/TCP/UDP header decoding (hand-rolled) |
+| `engine/` | Rust | Detection engine and rule evaluation |
+| `rules/` | Rust | YAML rule loader, schema definitions |
+| `alerts/` | Rust | Alert formatting, JSON log output |
 | `cli/` | Rust | CLI interface via `clap` |
-| `ffi/` | Rust (unsafe) | FFI boundary — the only `unsafe` code in the project |
 
 ---
 
@@ -81,20 +82,17 @@ Inspired by:
 ## Tech Stack
 
 **Rust crates:**
-- [`pnet`](https://docs.rs/pnet) — packet parsing (Ethernet/IP/TCP/UDP)
-- [`tokio`](https://tokio.rs) — async runtime for concurrent packet handling
-- [`rayon`](https://docs.rs/rayon) — data parallelism for rule matching
 - [`clap`](https://docs.rs/clap) — CLI argument parsing
 - [`serde`](https://serde.rs) + [`serde_json`](https://docs.rs/serde_json) — rule and alert serialization
-- [`log`](https://docs.rs/log) + [`env_logger`](https://docs.rs/env_logger) — structured logging
+- [`serde_yaml`](https://docs.rs/serde_yaml) — YAML rule file parsing
 
-**C library:**
-- [`libpcap`](https://www.tcpdump.org/) — packet capture (via FFI with `bindgen`)
+**C library (optional):**
+- [`libpcap`](https://www.tcpdump.org/) / [Npcap](https://npcap.com/) — live packet capture (via manual FFI, feature-gated)
 
 **Build:**
-- `CMake` — builds libpcap and links it into the Rust project
-- `Cargo` — Rust build system, invoked by CMake via [Corrosion](https://github.com/corrosion-rs/corrosion)
-- `bindgen` — auto-generates Rust FFI bindings from libpcap headers
+- `Cargo` — primary Rust build system
+- `CMake` — optional; invokes Cargo and handles libpcap discovery
+- `pkg-config` / `vcpkg` — used by `build.rs` to locate libpcap
 
 ---
 
@@ -102,27 +100,32 @@ Inspired by:
 
 ```
 vigil-ids/
-├── CMakeLists.txt          # Top-level build (C++ deps + Cargo invocation)
+├── CMakeLists.txt          # Optional CMake wrapper (invokes Cargo)
 ├── Cargo.toml
 ├── Cargo.lock
 ├── README.md
 ├── LICENSE
+├── CONTRIBUTING.md
 │
 ├── src/
 │   ├── main.rs             # Entry point, CLI parsing
+│   ├── lib.rs              # Library root (public module exports)
 │   ├── capture/
 │   │   ├── mod.rs          # Packet capture orchestration
-│   │   └── pcap_ffi.rs     # FFI boundary (unsafe, libpcap bindings)
+│   │   ├── pcap_ffi.rs     # FFI boundary (unsafe, libpcap bindings)
+│   │   └── pcap_file.rs    # Pure-Rust .pcap file reader
 │   ├── parser/
 │   │   └── mod.rs          # Packet header decoding
 │   ├── engine/
-│   │   ├── mod.rs          # Detection engine, thread pool
+│   │   ├── mod.rs          # Detection engine, stateful rule eval
 │   │   └── matcher.rs      # Rule evaluation logic
 │   ├── rules/
 │   │   ├── mod.rs          # Rule loader
 │   │   └── schema.rs       # Rule data structures
-│   └── alerts/
-│       └── mod.rs          # Alert formatting and output
+│   ├── alerts/
+│   │   └── mod.rs          # Alert formatting and output
+│   └── cli/
+│       └── mod.rs          # CLI argument definitions
 │
 ├── rules/
 │   ├── default.yaml        # Default bundled ruleset
@@ -130,14 +133,11 @@ vigil-ids/
 │       ├── port_scan.yaml
 │       └── blocklist.yaml
 │
-├── build.rs                # Cargo build script (links libpcap, runs bindgen)
-├── cmake/
-│   └── FindPcap.cmake      # CMake module to find libpcap
+├── build.rs                # Cargo build script (optional libpcap discovery)
 │
 ├── tests/
-│   ├── integration/
-│   │   ├── test_pcap_files.rs   # Tests against sample .pcap files
-│   │   └── test_rules.rs        # Rule matching correctness
+│   ├── test_pcap_reader.rs      # Pcap reading + detection integration tests
+│   ├── test_example_rules.rs    # Rule loading correctness
 │   └── pcap_samples/            # Sample .pcap files for testing
 │
 └── .github/
