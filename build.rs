@@ -11,7 +11,11 @@ fn main() {
         return;
     }
 
-    if try_pkg_config().or_else(try_vcpkg).or_else(try_npcap_sdk).is_some() {
+    if try_pkg_config()
+        .or_else(try_vcpkg)
+        .or_else(try_npcap_sdk)
+        .is_some()
+    {
         println!("cargo:rustc-cfg=has_libpcap");
     } else {
         println!("cargo:warning=libpcap was not found; continuing with a disabled pcap backend");
@@ -27,7 +31,9 @@ fn try_vcpkg() -> Option<()> {
 }
 
 fn try_npcap_sdk() -> Option<()> {
-    let sdk_lib_dir = sdk_lib_candidates().into_iter().find(|path| path.exists())?;
+    let sdk_lib_dir = sdk_lib_candidates()
+        .into_iter()
+        .find(|path| path.exists())?;
 
     println!("cargo:rustc-link-search=native={}", sdk_lib_dir.display());
 
@@ -57,8 +63,12 @@ fn sdk_lib_candidates() -> Vec<std::path::PathBuf> {
 
     candidates.push(std::path::PathBuf::from(r"C:\NpcapSDK\Lib\x64"));
     candidates.push(std::path::PathBuf::from(r"C:\NpcapSDK\Lib\ARM64"));
-    candidates.push(std::path::PathBuf::from(r"C:\Program Files\Npcap\SDK\Lib\x64"));
-    candidates.push(std::path::PathBuf::from(r"C:\Program Files\Npcap\SDK\Lib\ARM64"));
+    candidates.push(std::path::PathBuf::from(
+        r"C:\Program Files\Npcap\SDK\Lib\x64",
+    ));
+    candidates.push(std::path::PathBuf::from(
+        r"C:\Program Files\Npcap\SDK\Lib\ARM64",
+    ));
 
     candidates
 }
