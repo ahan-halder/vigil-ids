@@ -50,6 +50,10 @@ impl ParsedPacket {
         self.bytes.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
+    }
+
     pub fn summary(&self) -> String {
         let mut parts = Vec::new();
 
@@ -75,10 +79,16 @@ impl ParsedPacket {
         if let Some(transport) = self.transport.as_ref() {
             match transport {
                 TransportHeader::Tcp(tcp) => {
-                    parts.push(format!("tcp {} -> {}", tcp.source_port, tcp.destination_port));
+                    parts.push(format!(
+                        "tcp {} -> {}",
+                        tcp.source_port, tcp.destination_port
+                    ));
                 }
                 TransportHeader::Udp(udp) => {
-                    parts.push(format!("udp {} -> {}", udp.source_port, udp.destination_port));
+                    parts.push(format!(
+                        "udp {} -> {}",
+                        udp.source_port, udp.destination_port
+                    ));
                 }
             }
         }
@@ -180,8 +190,18 @@ fn parse_ipv4(bytes: &[u8], offset: usize) -> Option<(Ipv4Header, usize)> {
     }
 
     let ipv4 = Ipv4Header {
-        source_ip: [bytes[offset + 12], bytes[offset + 13], bytes[offset + 14], bytes[offset + 15]],
-        destination_ip: [bytes[offset + 16], bytes[offset + 17], bytes[offset + 18], bytes[offset + 19]],
+        source_ip: [
+            bytes[offset + 12],
+            bytes[offset + 13],
+            bytes[offset + 14],
+            bytes[offset + 15],
+        ],
+        destination_ip: [
+            bytes[offset + 16],
+            bytes[offset + 17],
+            bytes[offset + 18],
+            bytes[offset + 19],
+        ],
         protocol: bytes[offset + 9],
         header_len,
     };
