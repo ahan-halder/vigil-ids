@@ -17,8 +17,12 @@ pub struct CapturedPacket {
 }
 
 pub fn read_pcap_file(path: impl AsRef<Path>) -> Result<Vec<CapturedPacket>, String> {
-    let bytes = fs::read(path.as_ref())
-        .map_err(|error| format!("failed to read pcap file {}: {error}", path.as_ref().display()))?;
+    let bytes = fs::read(path.as_ref()).map_err(|error| {
+        format!(
+            "failed to read pcap file {}: {error}",
+            path.as_ref().display()
+        )
+    })?;
 
     let mut reader = PcapReader::new(&bytes)?;
     let mut packets = Vec::new();

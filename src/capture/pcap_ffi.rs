@@ -57,7 +57,9 @@ pub fn list_interfaces() -> Result<Vec<String>, String> {
     while !current.is_null() {
         let name_ptr = unsafe { (*current).name };
         if !name_ptr.is_null() {
-            let name = unsafe { CStr::from_ptr(name_ptr) }.to_string_lossy().to_string();
+            let name = unsafe { CStr::from_ptr(name_ptr) }
+                .to_string_lossy()
+                .to_string();
             names.push(name);
         }
         current = unsafe { (*current).next };
@@ -131,15 +133,8 @@ pub fn capture_live(interface: &str, max_packets: usize) -> Result<Vec<CapturedP
     let interface_cstr = CString::new(interface)
         .map_err(|_| "interface contains an interior null byte".to_string())?;
 
-    let handle = unsafe {
-        pcap_open_live(
-            interface_cstr.as_ptr(),
-            65535,
-            1,
-            1000,
-            errbuf.as_mut_ptr(),
-        )
-    };
+    let handle =
+        unsafe { pcap_open_live(interface_cstr.as_ptr(), 65535, 1, 1000, errbuf.as_mut_ptr()) };
 
     if handle.is_null() {
         let error_message = unsafe {
@@ -148,7 +143,9 @@ pub fn capture_live(interface: &str, max_packets: usize) -> Result<Vec<CapturedP
                 .trim()
                 .to_string()
         };
-        return Err(format!("failed to open live interface {interface}: {error_message}"));
+        return Err(format!(
+            "failed to open live interface {interface}: {error_message}"
+        ));
     }
 
     let mut packets = Vec::new();
