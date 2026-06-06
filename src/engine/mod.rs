@@ -61,7 +61,10 @@ impl DetectionEngine {
                 src_ip: packet.source_ip.clone(),
                 dst_ip: packet.destination_ip.clone(),
                 message: if let Some(destination_ip) = packet.destination_ip.as_deref() {
-                    format!("{}: {} matched for destination {destination_ip}", rule.name, rule.description)
+                    format!(
+                        "{}: {} matched for destination {destination_ip}",
+                        rule.name, rule.description
+                    )
                 } else {
                     format!("{}: {}", rule.name, rule.description)
                 },
