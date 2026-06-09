@@ -18,3 +18,11 @@ rules:
       type: port_scan
       threshold: 15
       window_secs: 10
+
+  - id: "PA-001"
+    name: "Protocol Anomaly"
+    description: "Suspicious packet structure detected"
+    severity: medium
+    action: alert
+    condition:
+      type: protocol_anomaly
