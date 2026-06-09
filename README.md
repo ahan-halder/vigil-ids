@@ -1,11 +1,10 @@
 # 🦀 Vigil IDS
 
-> A memory-safe, high-performance Network Intrusion Detection System built with Rust and C++.
+> A memory-safe, high-performance Network Intrusion Detection System built with Rust and C.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/vigil-ids)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.78%2B-orange)](https://www.rust-lang.org)
-[![Language: C++17](https://img.shields.io/badge/C%2B%2B-17-blue)](https://en.cppreference.com)
 
 ---
 
@@ -18,7 +17,7 @@ Traditional IDS tools like Snort and Suricata are written primarily in C/C++, ma
 This makes Vigil an excellent showcase of:
 - Real-world **Rust/C FFI interoperability** via manual `extern "C"` declarations
 - **CMake + Cargo** hybrid build systems
-- **Multi-threaded packet processing** with Rust's `tokio` and `rayon`
+- **Multi-threaded packet processing** with Rust's `rayon`
 - Zero unsafe code outside of the FFI boundary layer
 
 ---
@@ -32,7 +31,7 @@ This makes Vigil an excellent showcase of:
 │  Network Interface                                          │
 │       │                                                     │
 │       ▼                                                     │
-│  ┌─────────────────┐    FFI (bindgen)    ┌───────────────┐  │
+│  ┌─────────────────┐    FFI (manual)      ┌───────────────┐  │
 │  │  libpcap (C)    │ ──────────────────► │  Rust Packet  │  │
 │  │  Packet Capture │                     │  Engine       │  │
 │  └─────────────────┘                     └───────┬───────┘  │
@@ -75,7 +74,6 @@ This project targets a real market gap: existing IDS tools are written in memory
 Inspired by:
 - [Suricata](https://github.com/OISF/suricata) — production IDS, now ~25% Rust
 - [Blatta IDS](https://github.com/ravivendra/rust-thesis-blatta-ids) — academic Rust IDS demonstrating memory-safe TCP reassembly
-- [libpnet](https://github.com/libpnet/libpnet) — low-level Rust networking
 
 ---
 
@@ -293,53 +291,12 @@ jobs:
 
 ---
 
-## Roadmap
+## Documentation
 
-```
-Phase 1 — Foundation 
-  ├── Set up CMake + Cargo hybrid build
-  ├── Integrate libpcap via bindgen (FFI boundary)
-  └── Parse Ethernet/IP/TCP/UDP headers with pnet
-
-Phase 2 — Core Engine 
-  ├── YAML rule loader
-  ├── IP blocklist matching
-  ├── Port scan heuristic (sliding time window)
-  └── Multi-threaded processing with rayon
-
-Phase 3 — Integration & Testing 
-  ├── Integration tests with real .pcap samples
-  ├── Fuzz testing on packet parser
-  ├── GitHub Actions CI pipeline
-  └── Benchmarks vs tcpdump baseline
-
-Phase 4 — Polish & Release v0.1 
-  ├── CLI polish (clap, --help, man page)
-  ├── README, docs, example rules
-  └── Publish: GitHub release + crates.io
-
-Phase 5 — v0.2 Features 
-  ├── IPv6 support
-  ├── Syslog output
-  └── Rule hot-reload
-
-Phase 6 — v1.0 
-  ├── Hyperscan (C) integration for regex payload matching
-  ├── Web dashboard (Axum)
-  └── Performance tuning for multi-gigabit capture
-```
-
----
-
-## Resume Bullet Points
-
-> Use these when listing this project on your CV:
-
-- **Built Vigil**, a memory-safe network intrusion detection system in Rust/C++, processing packets via libpcap FFI and matching signatures with a multi-threaded Rust engine — demonstrating production-grade cross-language interop with zero unsafe code outside the FFI boundary.
-
-- **Architected a CMake + Cargo hybrid build system** integrating libpcap (C) with a Rust detection engine using `bindgen`, `pnet`, and `tokio` — achieving concurrent packet analysis across multiple CPU cores.
-
-- **Shipped an end-to-end IDS pipeline** including YAML rule loading, port scan detection, IP blocklisting, and JSON alerting — validated against public IDS benchmark datasets (CIC-IDS-2018).
+For more detailed information, please refer to the `docs/` directory:
+- [Roadmap](docs/ROADMAP.md)
+- [Resume Bullet Points](docs/RESUME.md)
+- [Rules Guide](docs/RULES.md)
 
 ---
 
@@ -347,9 +304,7 @@ Phase 6 — v1.0
 
 - [Suricata OISF](https://github.com/OISF/suricata) — production IDS, ~25% Rust
 - [Blatta IDS](https://github.com/ravivendra/rust-thesis-blatta-ids) — Rust-based NIDS thesis project
-- [libpnet](https://github.com/libpnet/libpnet) — Rust networking library
 - [Corrosion](https://github.com/corrosion-rs/corrosion) — CMake/Cargo integration
-- [bindgen](https://github.com/rust-lang/rust-bindgen) — Rust FFI binding generator
 - CIC-IDS-2018 Dataset — University of New Brunswick IDS evaluation dataset
 - Suricata's Rust modules: [https://suricata.io/2021/01/14/suricata-6-0-2-released/](https://suricata.io/2021/01/14/suricata-6-0-2-released/)
 
