@@ -3,6 +3,8 @@ pub mod matcher;
 use crate::parser::ParsedPacket;
 use crate::rules::{RuleCondition, RuleSet};
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
+use std::time::SystemTime;
 
 #[derive(Debug, Clone)]
 pub struct DetectionEvent {
@@ -20,6 +22,8 @@ pub struct DetectionEngine {
     rules: RuleSet,
     state: EngineState,
     synthetic_time_secs: u64,
+    rules_path: Option<PathBuf>,
+    rules_last_modified: Option<SystemTime>,
 }
 
 #[derive(Debug, Default)]
@@ -28,11 +32,45 @@ struct EngineState {
 }
 
 impl DetectionEngine {
-    pub fn with_rules(rules: RuleSet) -> Self {
+    pub fn with_rules(rules: RuleSet, rules_path: Option<PathBuf>) -> Self {
+        let rules_last_modified = rules_path
+            .as_ref()
+            .and_then(|p| std::fs::metadata(p).ok()?.modified().ok());
+
         Self {
             rules,
             state: EngineState::default(),
             synthetic_time_secs: 0,
+            rules_path,
+            rules_last_modified,
+        }
+    }
+
+    pub fn check_and_reload_rules(&mut self) {
+        let Some(path) = &self.rules_path else { return };
+        
+        if let Ok(metadata) = std::fs::metadata(path) {
+            if let Ok(modified) = metadata.modified() {
+                let should_reload = match self.rules_last_modified {
+                    Some(last) => modified > last,
+                    None => true,
+                };
+                
+                if should_reload {
+                    match crate::rules::RuleSet::load_from_path(path) {
+                        Ok(new_rules) => {
+                            eprintln!("Reloading rules from {}", path.display());
+                            self.rules = new_rules;
+                            self.rules_last_modified = Some(modified);
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to reload rules from {}: {e}", path.display());
+                            // Update modified time so we don't spam errors every check
+                            self.rules_last_modified = Some(modified);
+                        }
+                    }
+                }
+            }
         }
     }
 
