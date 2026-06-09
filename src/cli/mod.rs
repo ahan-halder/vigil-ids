@@ -27,6 +27,9 @@ pub struct Cli {
     #[arg(long)]
     pub output: Option<String>,
 
+    #[arg(long, help = "Send alerts to syslog via UDP (e.g., 127.0.0.1:514)")]
+    pub syslog: Option<String>,
+
     #[arg(long, default_value_t = false)]
     pub verbose: bool,
 }
