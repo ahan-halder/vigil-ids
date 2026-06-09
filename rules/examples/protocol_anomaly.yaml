@@ -1,0 +1,8 @@
+rules:
+  - id: "PA-001"
+    name: "Protocol Anomaly"
+    description: "Detects land attacks (src_port == dst_port) and malformed packet headers"
+    severity: medium
+    action: alert
+    condition:
+      type: protocol_anomaly
