@@ -29,7 +29,7 @@ fn main() {
         }
     };
 
-    let mut engine = engine::DetectionEngine::with_rules(loaded_rules.clone());
+    let mut engine = engine::DetectionEngine::with_rules(loaded_rules.clone(), Some(rules_path.clone()));
     let backend = capture::pcap_ffi::backend_name();
     let alert = alerts::Alert::new(format!("Vigil IDS boot sequence complete via {backend}"));
 
@@ -44,6 +44,20 @@ fn main() {
         rules_path.display()
     );
     eprintln!("Alert template: {}", alert.message);
+
+    let syslog_sender = match cli.syslog.as_deref() {
+        Some(target) => {
+            eprintln!("Syslog output enabled: target={target}");
+            match alerts::syslog::SyslogSender::new(target) {
+                Ok(sender) => Some(sender),
+                Err(e) => {
+                    eprintln!("Failed to initialize syslog: {e}");
+                    None
+                }
+            }
+        }
+        None => None,
+    };
 
     if cli.list_interfaces {
         match capture::list_interfaces() {
@@ -65,7 +79,7 @@ fn main() {
             );
             match capture::process_pcap_file(pcap_path, &mut engine) {
                 Ok(detections) => {
-                    if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref())
+                    if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref(), syslog_sender.as_ref())
                     {
                         eprintln!("{error}");
                     }
@@ -76,15 +90,20 @@ fn main() {
             }
         }
         None => match cli.interface.as_deref() {
-            Some(interface) => match capture::process_live_interface(interface, &mut engine) {
-                Ok(detections) => {
-                    if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref())
-                    {
-                        eprintln!("{error}");
+            Some(interface) => loop {
+                match capture::process_live_interface(interface, &mut engine) {
+                    Ok(detections) => {
+                        if !detections.is_empty() {
+                            if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref(), syslog_sender.as_ref())
+                            {
+                                eprintln!("{error}");
+                            }
+                        }
                     }
-                }
-                Err(error) => {
-                    eprintln!("{error}");
+                    Err(error) => {
+                        eprintln!("{error}");
+                        break;
+                    }
                 }
             },
             None => {

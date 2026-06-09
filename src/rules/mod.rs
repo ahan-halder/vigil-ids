@@ -63,6 +63,11 @@ pub fn matches_condition(condition: &RuleCondition, packet: &crate::parser::Pars
                     return true; // Malformed packet
                 }
             }
+            if packet.ipv6.is_some() {
+                if packet.bytes.len().saturating_sub(14) < 40 {
+                    return true; // Malformed IPv6 packet
+                }
+            }
             false
         }
     }
