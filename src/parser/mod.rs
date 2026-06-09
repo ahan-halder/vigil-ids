@@ -14,6 +14,13 @@ pub struct Ipv4Header {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
+pub struct Ipv6Header {
+    pub source_ip: [u8; 16],
+    pub destination_ip: [u8; 16],
+    pub next_header: u8,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
 pub struct TcpHeader {
     pub source_port: u16,
     pub destination_port: u16,
@@ -37,6 +44,7 @@ pub struct ParsedPacket {
     pub capture_time_secs: Option<u64>,
     pub ethernet: Option<EthernetHeader>,
     pub ipv4: Option<Ipv4Header>,
+    pub ipv6: Option<Ipv6Header>,
     pub transport: Option<TransportHeader>,
     pub source_ip: Option<String>,
     pub destination_ip: Option<String>,
@@ -76,6 +84,15 @@ impl ParsedPacket {
             ));
         }
 
+        if let Some(ipv6) = self.ipv6.as_ref() {
+            parts.push(format!(
+                "ipv6 {} -> {} next={}",
+                format_ipv6(&ipv6.source_ip),
+                format_ipv6(&ipv6.destination_ip),
+                ipv6.next_header
+            ));
+        }
+
         if let Some(transport) = self.transport.as_ref() {
             match transport {
                 TransportHeader::Tcp(tcp) => {
@@ -108,6 +125,7 @@ pub fn parse(bytes: &[u8]) -> ParsedPacket {
         capture_time_secs: None,
         ethernet,
         ipv4: None,
+        ipv6: None,
         transport: None,
         source_ip: None,
         destination_ip: None,
@@ -120,20 +138,31 @@ pub fn parse(bytes: &[u8]) -> ParsedPacket {
         return parsed;
     };
 
-    if ethernet.ethertype != 0x0800 {
-        return parsed;
-    }
-
     let ip_offset = 14;
-    let Some((ipv4, transport_offset)) = parse_ipv4(bytes, ip_offset) else {
+
+    let (protocol, transport_offset) = if ethernet.ethertype == 0x0800 {
+        if let Some((ipv4, offset)) = parse_ipv4(bytes, ip_offset) {
+            parsed.source_ip = Some(format_ipv4(&ipv4.source_ip));
+            parsed.destination_ip = Some(format_ipv4(&ipv4.destination_ip));
+            parsed.ipv4 = Some(ipv4);
+            (ipv4.protocol, offset)
+        } else {
+            return parsed;
+        }
+    } else if ethernet.ethertype == 0x86dd {
+        if let Some((ipv6, offset)) = parse_ipv6(bytes, ip_offset) {
+            parsed.source_ip = Some(format_ipv6(&ipv6.source_ip));
+            parsed.destination_ip = Some(format_ipv6(&ipv6.destination_ip));
+            parsed.ipv6 = Some(ipv6);
+            (ipv6.next_header, offset)
+        } else {
+            return parsed;
+        }
+    } else {
         return parsed;
     };
 
-    parsed.source_ip = Some(format_ipv4(&ipv4.source_ip));
-    parsed.destination_ip = Some(format_ipv4(&ipv4.destination_ip));
-    parsed.ipv4 = Some(ipv4);
-
-    match ipv4.protocol {
+    match protocol {
         6 => {
             if let Some(tcp) = parse_tcp(bytes, transport_offset) {
                 parsed.source_port = Some(tcp.source_port);
@@ -209,6 +238,31 @@ fn parse_ipv4(bytes: &[u8], offset: usize) -> Option<(Ipv4Header, usize)> {
     Some((ipv4, offset + header_len))
 }
 
+fn parse_ipv6(bytes: &[u8], offset: usize) -> Option<(Ipv6Header, usize)> {
+    if bytes.len() < offset + 40 {
+        return None;
+    }
+
+    let version = bytes[offset] >> 4;
+    if version != 6 {
+        return None;
+    }
+
+    let mut source_ip = [0u8; 16];
+    let mut destination_ip = [0u8; 16];
+
+    source_ip.copy_from_slice(&bytes[offset + 8..offset + 24]);
+    destination_ip.copy_from_slice(&bytes[offset + 24..offset + 40]);
+
+    let ipv6 = Ipv6Header {
+        source_ip,
+        destination_ip,
+        next_header: bytes[offset + 6],
+    };
+
+    Some((ipv6, offset + 40))
+}
+
 fn parse_tcp(bytes: &[u8], offset: usize) -> Option<TcpHeader> {
     if bytes.len() < offset + 20 {
         return None;
@@ -240,4 +294,8 @@ fn format_mac(bytes: &[u8; 6]) -> String {
         "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
         bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]
     )
+}
+
+fn format_ipv6(bytes: &[u8; 16]) -> String {
+    std::net::Ipv6Addr::from(*bytes).to_string()
 }
