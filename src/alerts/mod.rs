@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+pub mod syslog;
+
 #[derive(Debug, Clone)]
 pub struct Alert {
     pub message: String,
@@ -41,6 +43,7 @@ impl From<&crate::engine::DetectionEvent> for JsonAlert {
 pub fn emit_json_alerts(
     detections: &[crate::engine::DetectionEvent],
     output_path: Option<&str>,
+    syslog_sender: Option<&syslog::SyslogSender>,
 ) -> Result<(), String> {
     let lines: Result<Vec<_>, _> = detections
         .iter()
@@ -60,8 +63,17 @@ pub fn emit_json_alerts(
                 .map_err(|error| format!("failed to write alerts to {path}: {error}"))?;
         }
         None => {
-            for line in lines {
+            for line in &lines {
                 println!("{line}");
+            }
+        }
+    }
+
+    if let Some(sender) = syslog_sender {
+        for detection in detections {
+            let alert = JsonAlert::from(detection);
+            if let Err(error) = sender.send(&alert) {
+                eprintln!("Syslog error: {error}");
             }
         }
     }
