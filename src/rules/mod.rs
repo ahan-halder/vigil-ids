@@ -50,5 +50,20 @@ pub fn matches_condition(condition: &RuleCondition, packet: &crate::parser::Pars
             .as_deref()
             .is_some_and(|source_ip| src_ips.iter().any(|blocked_ip| blocked_ip == source_ip)),
         RuleCondition::PortScan { .. } => false,
+        RuleCondition::ProtocolAnomaly => {
+            if let Some(sport) = packet.source_port {
+                if let Some(dport) = packet.destination_port {
+                    if sport == dport {
+                        return true; // Land attack pattern
+                    }
+                }
+            }
+            if let Some(ipv4) = &packet.ipv4 {
+                if packet.bytes.len().saturating_sub(14) < ipv4.header_len {
+                    return true; // Malformed packet
+                }
+            }
+            false
+        }
     }
 }

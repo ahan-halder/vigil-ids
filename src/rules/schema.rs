@@ -28,6 +28,7 @@ pub enum RuleCondition {
         #[serde(default = "default_port_scan_window_secs")]
         window_secs: u64,
     },
+    ProtocolAnomaly,
 }
 
 fn default_port_scan_threshold() -> u32 {
