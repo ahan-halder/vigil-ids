@@ -44,15 +44,16 @@ impl DetectionEngine {
 
         let rules = self.rules.rules.clone();
 
-        rules
-            .iter()
-            .filter(|rule| match &rule.condition {
-                RuleCondition::PortScan {
-                    threshold,
-                    window_secs,
-                } => self.is_port_scan(packet, event_time_secs, *threshold, *window_secs),
-                _ => matcher::matches(rule, packet),
-            })
+        let (stateful_rules, stateless_rules): (Vec<_>, Vec<_>) = rules
+            .into_iter()
+            .partition(|r| matches!(r.condition, RuleCondition::PortScan { .. }));
+
+        use rayon::prelude::*;
+
+        // Process stateless rules in parallel
+        let mut detections: Vec<DetectionEvent> = stateless_rules
+            .into_par_iter()
+            .filter(|rule| matcher::matches(rule, packet))
             .map(|rule| DetectionEvent {
                 rule_id: rule.id.clone(),
                 severity: rule.severity.clone().unwrap_or_else(|| "low".to_string()),
@@ -69,7 +70,39 @@ impl DetectionEngine {
                     format!("{}: {}", rule.name, rule.description)
                 },
             })
-            .collect()
+            .collect();
+
+        // Process stateful rules sequentially
+        for rule in stateful_rules {
+            let matched = match &rule.condition {
+                RuleCondition::PortScan {
+                    threshold,
+                    window_secs,
+                } => self.is_port_scan(packet, event_time_secs, *threshold, *window_secs),
+                _ => false,
+            };
+
+            if matched {
+                detections.push(DetectionEvent {
+                    rule_id: rule.id.clone(),
+                    severity: rule.severity.clone().unwrap_or_else(|| "low".to_string()),
+                    action: rule.action.clone().unwrap_or_else(|| "alert".to_string()),
+                    timestamp_secs: packet.capture_time_secs,
+                    src_ip: packet.source_ip.clone(),
+                    dst_ip: packet.destination_ip.clone(),
+                    message: if let Some(destination_ip) = packet.destination_ip.as_deref() {
+                        format!(
+                            "{}: {} matched for destination {destination_ip}",
+                            rule.name, rule.description
+                        )
+                    } else {
+                        format!("{}: {}", rule.name, rule.description)
+                    },
+                });
+            }
+        }
+
+        detections
     }
 
     fn is_port_scan(
