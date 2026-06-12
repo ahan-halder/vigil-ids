@@ -29,7 +29,8 @@ fn main() {
         }
     };
 
-    let mut engine = engine::DetectionEngine::with_rules(loaded_rules.clone(), Some(rules_path.clone()));
+    let mut engine =
+        engine::DetectionEngine::with_rules(loaded_rules.clone(), Some(rules_path.clone()));
     let backend = capture::pcap_ffi::backend_name();
     let alert = alerts::Alert::new(format!("Vigil IDS boot sequence complete via {backend}"));
 
@@ -79,8 +80,11 @@ fn main() {
             );
             match capture::process_pcap_file(pcap_path, &mut engine) {
                 Ok(detections) => {
-                    if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref(), syslog_sender.as_ref())
-                    {
+                    if let Err(error) = alerts::emit_json_alerts(
+                        &detections,
+                        cli.output.as_deref(),
+                        syslog_sender.as_ref(),
+                    ) {
                         eprintln!("{error}");
                     }
                 }
@@ -94,8 +98,11 @@ fn main() {
                 match capture::process_live_interface(interface, &mut engine) {
                     Ok(detections) => {
                         if !detections.is_empty() {
-                            if let Err(error) = alerts::emit_json_alerts(&detections, cli.output.as_deref(), syslog_sender.as_ref())
-                            {
+                            if let Err(error) = alerts::emit_json_alerts(
+                                &detections,
+                                cli.output.as_deref(),
+                                syslog_sender.as_ref(),
+                            ) {
                                 eprintln!("{error}");
                             }
                         }
