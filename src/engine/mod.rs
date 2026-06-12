@@ -48,14 +48,14 @@ impl DetectionEngine {
 
     pub fn check_and_reload_rules(&mut self) {
         let Some(path) = &self.rules_path else { return };
-        
+
         if let Ok(metadata) = std::fs::metadata(path) {
             if let Ok(modified) = metadata.modified() {
                 let should_reload = match self.rules_last_modified {
                     Some(last) => modified > last,
                     None => true,
                 };
-                
+
                 if should_reload {
                     match crate::rules::RuleSet::load_from_path(path) {
                         Ok(new_rules) => {
