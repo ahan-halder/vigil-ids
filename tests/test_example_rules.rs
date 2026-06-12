@@ -29,8 +29,7 @@ fn loads_example_protocol_anomaly_rules() {
 
 #[test]
 fn loads_default_rules_with_all_types() {
-    let rules =
-        RuleSet::load_from_path("rules/default.yaml").expect("default rules should load");
+    let rules = RuleSet::load_from_path("rules/default.yaml").expect("default rules should load");
 
     assert_eq!(rules.len(), 3);
     let ids: Vec<&str> = rules.rules.iter().map(|r| r.id.as_str()).collect();
