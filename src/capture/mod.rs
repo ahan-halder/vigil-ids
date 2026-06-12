@@ -58,9 +58,9 @@ pub fn process_live_interface(
     engine: &mut DetectionEngine,
 ) -> Result<Vec<DetectionEvent>, String> {
     let packets = pcap_ffi::capture_live(interface, 64)?;
-    
+
     engine.check_and_reload_rules();
-    
+
     let mut detections = Vec::new();
 
     for packet in packets {
