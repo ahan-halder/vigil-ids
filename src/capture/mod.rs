@@ -37,13 +37,11 @@ pub fn process_pcap_file(
 ) -> Result<Vec<DetectionEvent>, String> {
     let packets = pcap_file::read_pcap_file(path)?;
     let mut detections = Vec::new();
-    let mut count = 0;
 
-    for packet in packets {
+    for (count, packet) in packets.into_iter().enumerate() {
         if count % 1024 == 0 {
             engine.check_and_reload_rules();
         }
-        count += 1;
 
         let parsed = parser::parse_with_timestamp(&packet.data, packet.timestamp_secs);
         let _summary = parsed.summary();
