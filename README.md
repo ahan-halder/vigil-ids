@@ -31,7 +31,7 @@ This makes Vigil an excellent showcase of:
 │  Network Interface                                          │
 │       │                                                     │
 │       ▼                                                     │
-│  ┌─────────────────┐    FFI (manual)      ┌───────────────┐  │
+│  ┌─────────────────┐    FFI (manual)     ┌───────────────┐  │
 │  │  libpcap (C)    │ ──────────────────► │  Rust Packet  │  │
 │  │  Packet Capture │                     │  Engine       │  │
 │  └─────────────────┘                     └───────┬───────┘  │
