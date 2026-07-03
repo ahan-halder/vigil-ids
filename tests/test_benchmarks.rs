@@ -25,7 +25,10 @@ fn benchmark_packet_parsing() {
     }
     let elapsed = start.elapsed();
     let pps = num_packets as f64 / elapsed.as_secs_f64();
-    println!("Packet Parsing Throughput: {:.2} packets/sec ({:?} for {} packets)", pps, elapsed, num_packets);
+    println!(
+        "Packet Parsing Throughput: {:.2} packets/sec ({:?} for {} packets)",
+        pps, elapsed, num_packets
+    );
 }
 #[test]
 fn benchmark_detection_engine() {
