@@ -3,6 +3,7 @@ use vigil_ids::engine::DetectionEngine;
 use vigil_ids::parser;
 use vigil_ids::rules::schema::RuleFile;
 use vigil_ids::rules::RuleSet;
+
 fn tcp_packet_bytes(destination_port: u16) -> Vec<u8> {
     let mut bytes = vec![
         0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0x08, 0x00, 0x45,
@@ -15,10 +16,15 @@ fn tcp_packet_bytes(destination_port: u16) -> Vec<u8> {
     bytes[37] = low;
     bytes
 }
+
 #[test]
 fn benchmark_packet_parsing() {
     let raw_packet = tcp_packet_bytes(80);
-    let num_packets = 500_000;
+    let num_packets = if cfg!(debug_assertions) {
+        10_000
+    } else {
+        500_000
+    };
     let start = Instant::now();
     for i in 0..num_packets {
         let _ = parser::parse_with_timestamp(&raw_packet, i);
@@ -30,6 +36,7 @@ fn benchmark_packet_parsing() {
         pps, elapsed, num_packets
     );
 }
+
 #[test]
 fn benchmark_detection_engine() {
     let rules_yaml = r#"
@@ -65,8 +72,14 @@ rules:
     let rules = RuleSet { rules: file.rules };
     let mut engine = DetectionEngine::with_rules(rules, None);
     let raw_packet = tcp_packet_bytes(80);
-    let parsed = parser::parse_with_timestamp(&raw_packet, 100);
-    let num_packets = 100_000;
+    let mut parsed = parser::parse_with_timestamp(&raw_packet, 100);
+    parsed.capture_time_secs = None; // Let synthetic time advance so sliding window expires old history
+
+    let num_packets = if cfg!(debug_assertions) {
+        5_000
+    } else {
+        100_000
+    };
     let start = Instant::now();
     let mut alerts = 0;
     for _ in 0..num_packets {
@@ -75,5 +88,8 @@ rules:
     }
     let elapsed = start.elapsed();
     let pps = num_packets as f64 / elapsed.as_secs_f64();
-    println!("Detection Engine Throughput (3 rules): {:.2} packets/sec ({:?} for {} packets, {} alerts generated)", pps, elapsed, num_packets, alerts);
+    println!(
+        "Detection Engine Throughput (3 rules): {:.2} packets/sec ({:?} for {} packets, {} alerts generated)",
+        pps, elapsed, num_packets, alerts
+    );
 }
